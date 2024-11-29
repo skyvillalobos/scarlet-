@@ -1,0 +1,141 @@
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.*;
+import java.util.*;
+
+public class Ahorcado extends JFrame {
+
+    private static final long serialVersionUID = 1L;
+
+    private static final String[] EMOCIONES = {
+        "felicidad", "tristeza", "enojo", "miedo", "sorpresa", "ansiedad", "relajado", "confianza"
+    };
+
+    private String palabraSecreta;
+    private StringBuilder palabraAdivinada;
+    private int intentosFallidos;
+    private final int MAX_INTENTOS = 6;  // Número de intentos antes de perder
+
+    private JLabel palabraLabel;
+    private JLabel intentosLabel;
+    private MonitoPanel monitoPanel;
+
+    public Ahorcado() {
+        // Configuración básica de la ventana
+        setTitle("Juego del Ahorcado");
+        setSize(500, 400);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setLocationRelativeTo(null);
+        setLayout(new BorderLayout());
+
+        // Selección de palabra aleatoria
+        Random rand = new Random();
+        palabraSecreta = EMOCIONES[rand.nextInt(EMOCIONES.length)];
+        palabraAdivinada = new StringBuilder("_".repeat(palabraSecreta.length()));
+
+        // Inicialización de los intentos fallidos
+        intentosFallidos = 0;
+
+        // Componentes de la UI
+        palabraLabel = new JLabel("Palabra: " + palabraAdivinada.toString());
+        palabraLabel.setFont(new Font("Arial", Font.BOLD, 20));
+        add(palabraLabel, BorderLayout.NORTH);
+
+        monitoPanel = new MonitoPanel();
+        add(monitoPanel, BorderLayout.CENTER);
+
+        intentosLabel = new JLabel("Intentos fallidos: " + intentosFallidos + "/" + MAX_INTENTOS);
+        intentosLabel.setFont(new Font("Arial", Font.PLAIN, 16));
+        add(intentosLabel, BorderLayout.SOUTH);
+
+        // Botón de ingresar letra
+        JButton botonIngreso = new JButton("Ingresar letra");
+        botonIngreso.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                String letra = JOptionPane.showInputDialog(Ahorcado.this, "Ingresa una letra:");
+                if (letra != null && letra.length() == 1) {
+                    letra = letra.toLowerCase();
+                    if (palabraSecreta.contains(letra)) {
+                        actualizarPalabraAdivinada(letra);
+                    } else {
+                        intentosFallidos++;
+                        monitoPanel.repaint(); // Actualizar el dibujo
+                    }
+                    actualizarInterfaz();
+                    verificarJuego();
+                }
+            }
+        });
+        add(botonIngreso, BorderLayout.EAST);
+
+        setVisible(true);
+    }
+
+    // Actualiza la palabra adivinada
+    private void actualizarPalabraAdivinada(String letra) {
+        for (int i = 0; i < palabraSecreta.length(); i++) {
+            if (palabraSecreta.charAt(i) == letra.charAt(0)) {
+                palabraAdivinada.setCharAt(i, letra.charAt(0));
+            }
+        }
+    }
+
+    // Actualiza la interfaz con los cambios
+    private void actualizarInterfaz() {
+        palabraLabel.setText("Palabra: " + palabraAdivinada.toString());
+        intentosLabel.setText("Intentos fallidos: " + intentosFallidos + "/" + MAX_INTENTOS);
+    }
+
+    // Verifica si el jugador ha ganado o perdido
+    private void verificarJuego() {
+        if (palabraAdivinada.toString().equals(palabraSecreta)) {
+            JOptionPane.showMessageDialog(this, "¡Felicidades! Has adivinado la palabra.");
+            reiniciarJuego();
+        } else if (intentosFallidos >= MAX_INTENTOS) {
+            JOptionPane.showMessageDialog(this, "¡Perdiste! La palabra era: " + palabraSecreta);
+            reiniciarJuego();
+        }
+    }
+
+    // Reinicia el juego
+    private void reiniciarJuego() {
+        int respuesta = JOptionPane.showConfirmDialog(this, "¿Quieres jugar de nuevo?", "Juego Terminado", JOptionPane.YES_NO_OPTION);
+        if (respuesta == JOptionPane.YES_OPTION) {
+            new Ahorcado();
+            dispose();
+        } else {
+            System.exit(0);
+        }
+    }
+
+    // Clase interna para dibujar el monito
+    class MonitoPanel extends JPanel {
+        @Override
+        protected void paintComponent(Graphics g) {
+            super.paintComponent(g);
+            // Dibuja el soporte
+            g.drawLine(50, 250, 150, 250); // Base
+            g.drawLine(100, 250, 100, 50); // Poste
+            g.drawLine(100, 50, 200, 50);  // Brazo
+            g.drawLine(200, 50, 200, 80);  // Cuerda
+
+            // Dibuja el monito según los intentos fallidos
+            if (intentosFallidos > 0) g.drawOval(180, 80, 40, 40); // Cabeza
+            if (intentosFallidos > 1) g.drawLine(200, 120, 200, 180); // Cuerpo
+            if (intentosFallidos > 2) g.drawLine(200, 140, 180, 160); // Brazo izquierdo
+            if (intentosFallidos > 3) g.drawLine(200, 140, 220, 160); // Brazo derecho
+            if (intentosFallidos > 4) g.drawLine(200, 180, 180, 210); // Pierna izquierda
+            if (intentosFallidos > 5) g.drawLine(200, 180, 220, 210); // Pierna derecha
+
+            // Caída del monito si pierde
+            if (intentosFallidos >= MAX_INTENTOS) {
+                g.drawLine(200, 50, 220, 70); // Monito "cayendo"
+            }
+        }
+    }
+
+    public static void main(String[] args) {
+        new Ahorcado();
+    }
+}
